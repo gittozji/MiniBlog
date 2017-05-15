@@ -1,0 +1,57 @@
+create database miniblog character set = utf8; 
+
+create table blog_user(
+	id int(11) primary key auto_increment,
+	account varchar(20) not null,
+	password varchar(40) not null,
+	name varchar(20) not null default 'miniblog',
+	icon char(24)
+);
+
+create table blog_article(
+	id int(11) primary key auto_increment,
+	title varchar(50) not null default '',
+	content text not null default '',
+	time int(10) not null default 0000000000,
+	views smallint(5) not null default 0,
+	comefrom varchar(4) not null default '原创' check(comefrom = '原创'or comefrom = '转载'or comefrom = '翻译'),
+	uid int(11),
+	foreign key (uid) references blog_user(id)
+); 
+
+
+create table blog_comment(
+	id int(11) primary key auto_increment,
+	uid int(11),
+	aid int(11),
+	time int(10) not null default 0000000000,
+	content text not null default '',
+	foreign key (uid) references blog_user (id) on delete cascade,
+	foreign key (aid) references blog_article (id) on delete cascade
+);
+
+create table blog_link(
+	id int(11) primary key auto_increment,
+	name varchar(30) not null default '',
+	http text not null default ''
+);
+
+create table blog_recommend(
+	id int(11) primary key auto_increment,
+	aid int(11),
+	foreign key (aid) references blog_article (id) on delete cascade
+);
+
+DELIMITER &&
+CREATE TRIGGER delete_b AFTER DELETE
+       ON blog_article FOR EACH ROW
+       BEGIN
+          delete from blog_comment where aid=old.id;
+          delete from blog_recommend where aid=old.id;
+       END
+       &&
+DELIMITER ;
+
+create view a_u_view as select blog_article.id,blog_article.title,blog_article.content,blog_article.time,blog_article.views,blog_article.comefrom,blog_user.name from blog_article,blog_user where blog_article.uid=blog_user.id
+
+alter table blog_article add index index_views (views desc);
